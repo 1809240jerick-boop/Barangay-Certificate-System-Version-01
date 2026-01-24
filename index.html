@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2c3e50">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barangay Pro - Secure System</title>
+    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;700&family=EB+Garamond:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --danger: #e74c3c;
+            --success: #27ae60;
+            --spacing: 20px;
+            --input-bg: #ffffff;
+        }
+
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; background-color: #bdc3c7; overflow: hidden; }
+
+        /* --- SIDEBAR --- */
+        #sidebar {
+            width: 420px; background: #fdfdfd; padding: var(--spacing); display: flex; flex-direction: column;
+            gap: 15px; box-shadow: 4px 0 15px rgba(0,0,0,0.1); overflow-y: auto; transition: 0.3s;
+        }
+        .full-view #sidebar { margin-left: -420px; }
+
+        .section-title { font-size: 0.75rem; font-weight: 700; color: #7f8c8d; text-transform: uppercase; border-bottom: 2px solid #f0f0f0; padding-bottom: 5px; margin-top: 10px; }
+        
+        input, select, textarea { padding: 10px; border: 1px solid #dcdde1; border-radius: 6px; font-size: 0.9rem; width: 100%; background: var(--input-bg); }
+        #inPurpose { min-height: 80px; resize: vertical; }
+
+        /* Business Details Container */
+        #businessInputs { 
+            display: none; 
+            flex-direction: column; 
+            gap: 10px; 
+            background: #f1f4f7; 
+            padding: 15px; 
+            border-radius: 8px; 
+            border: 1px solid #d1d8dd;
+        }
+        .field-group { display: flex; flex-direction: column; gap: 4px; }
+        .field-label { font-size: 0.7rem; font-weight: bold; color: var(--accent); margin-left: 2px; }
+
+        /* --- SEARCH & LOG --- */
+        #searchResults {
+            background: white; border: 1px solid #ccc; border-radius: 4px; 
+            position: absolute; width: 380px; z-index: 1000; display: none; 
+            max-height: 250px; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .search-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
+        .search-item:hover { background: #f1f7ff; }
+        .search-item .meta { font-size: 0.75rem; color: #7f8c8d; margin-top: 2px; }
+
+        .log-list-scroll { height: 180px; overflow-y: scroll; border: 1px solid #f0f0f0; margin-top: 10px; background: #fafafa; border-radius: 4px; }
+        .log-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 0.85rem; }
+        .log-item:hover { background: #eef2f3; }
+
+        /* --- NAV --- */
+        #nav-bar { height: 65px; background: #fff; border-bottom: 1px solid #ddd; display: flex; align-items: center; justify-content: space-between; padding: 0 30px; }
+        .nav-btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; transition: 0.2s; }
+
+        /* --- DOCUMENT STYLES --- */
+        #preview-area { flex-grow: 1; padding: 40px; overflow-y: auto; display: flex; justify-content: center; }
+        .paper {
+            width: 8.5in; height: 11in; background: white; padding: 1in;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2); display: flex; flex-direction: column;
+            line-height: 1.5;
+        }
+
+        .f-eb { font-family: 'EB Garamond', serif; }
+        .f-tnr { font-family: 'Times New Roman', Times, serif; }
+        .bold { font-weight: bold; }
+        .center { text-align: center; }
+        .justify { text-align: justify; }
+        
+        .header-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; line-height: 1.2; }
+        .logo-box { width: 110px; height: 110px; }
+        .logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+        .title-main { font-size: 20pt; margin-bottom: 1rem; }
+        .salutation { font-size: 12pt; margin-bottom: 2rem; }
+
+        .signature-section { margin-top: 2rem; }
+        .footer-seal { margin-top: auto; font-size: 12pt; }
+
+        /* Add this above your @media print */
+@page {
+    size: letter portrait;
+    margin: 0 !important;
+}
+
+@media print {
+    /* This hides the background and UI */
+    body { 
+        background: none !important; 
+        margin: 0 !important; 
+        padding: 0 !important;
+    }
+    
+    #sidebar, #nav-bar { display: none !important; }
+    
+    #preview-area { 
+        padding: 0 !important; 
+        margin: 0 !important;
+        display: block !important;
+    }
+
+    .paper {
+        width: 8.5in !important;
+        height: 11in !important;
+        box-shadow: none !important;
+        border: none !important;
+        
+        /* THE FIX: */
+        margin-top: -0.5in !important; /* Pulls the paper UP if the browser pushes it down */
+        padding: 0.5in 1in !important;  /* Standard internal padding */
+        
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+    }
+}
+    </style>
+</head>
+<body onload="initApp()">
+
+    <div id="sidebar">
+        <h2 style="margin:0; color:var(--primary); font-family:'EB Garamond'">Barangay Pro</h2>
+
+        <details>
+            <summary class="section-title" style="cursor:pointer">⚙️ Office Settings</summary>
+            <div style="padding:10px 0; display:flex; flex-direction:column; gap:8px">
+                <input type="text" id="setProv" placeholder="Province" oninput="saveSet()">
+                <input type="text" id="setMun" placeholder="Municipality" oninput="saveSet()">
+                <input type="text" id="setBrgy" placeholder="Barangay" oninput="saveSet()">
+                <input type="text" id="setCap" placeholder="Punong Barangay" oninput="saveSet()">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
+                    <input type="file" onchange="storeLogo(this, 'L')">
+                    <input type="file" onchange="storeLogo(this, 'R')">
+                </div>
+            </div>
+        </details>
+
+        <div style="position: relative;">
+            <div class="section-title">🔍 Search Records</div>
+            <input type="text" id="searchInp" placeholder="Search name..." onkeyup="searchRecords()" style="margin-top:5px;">
+            <div id="searchResults"></div>
+        </div>
+
+        <div class="section-title">📄 Document Type</div>
+        <select id="docType" onchange="sync()">
+            <option value="BARANGAY CLEARANCE">Barangay Clearance</option>
+            <option value="CERTIFICATE OF INDIGENCY">Certificate of Indigency</option>
+            <option value="BARANGAY BUSINESS CLEARANCE">Barangay Business Clearance</option>
+            <option value="CERTIFICATE OF RESIDENCY">Certificate of Residency</option>
+        </select>
+
+        <div class="section-title">👤 Subject Name</div>
+        <input type="text" id="inName" placeholder="Full Name" oninput="sync()">
+
+        <div id="personalDetails">
+            <div class="section-title">📋 Demographics</div>
+            <div style="display:flex; gap:5px; margin-bottom: 8px;">
+                <input type="number" id="inAge" placeholder="Age" oninput="sync()">
+                <select id="inGender" onchange="sync()">
+                    <option value="MALE">MALE</option>
+                    <option value="FEMALE">FEMALE</option>
+                </select>
+            </div>
+            <div style="display:flex; gap:5px; margin-bottom: 8px;">
+                <select id="inStatus" onchange="sync()">
+                    <option value="SINGLE">SINGLE</option>
+                    <option value="MARRIED">MARRIED</option>
+                    <option value="WIDOWED">WIDOWED</option>
+                    <option value="SEPARATED">SEPARATED</option>
+                </select>
+                <input type="number" id="inResYear" placeholder="Year Since" oninput="sync()">
+            </div>
+            <input type="text" id="inPurok" placeholder="Purok / Zone" oninput="sync()" style="margin-top:5px;">
+        </div>
+
+        <div id="businessInputs">
+            <div class="field-group">
+                <span class="field-label">NAME OF BUSINESS</span>
+                <input type="text" id="inBizName" placeholder="Business Name" oninput="sync()">
+            </div>
+            <div class="field-group">
+                <span class="field-label">NATURE OF BUSINESS</span>
+                <input type="text" id="inBizNature" placeholder="e.g. Sari-Sari Store" oninput="sync()">
+            </div>
+            <div class="field-group">
+                <span class="field-label">BUSINESS LOCATION</span>
+                <input type="text" id="inBizPurok" placeholder="Purok/Zone" oninput="sync()">
+            </div>
+        </div>
+<div id="soloParentInputs" style="display:none; flex-direction:column; gap:10px; background:#f1f4f7; padding:15px; border-radius:8px; border:1px solid #d1d8dd;">
+    <div class="section-title" style="color:var(--accent)">Parental Status</div>
+    <div id="femOption" style="display:none">
+        <select id="fatherCase" onchange="sync()"><option value="0">Father did not recognize child</option><option value="1">Father recognized the child</option></select>
+        <input type="text" id="fatherName" placeholder="Name of Father" oninput="sync()" style="margin-top:5px">
+    </div>
+    <div id="maleOption" style="display:none">
+        <select id="motherCase" onchange="sync()"><option value="0">Mother is not with them</option><option value="1">Mother is not supporting them</option><option value="2">Mother is deceased</option></select>
+    </div>
+    <div class="section-title" style="color:var(--accent)">Children</div>
+    <div id="childListUI"></div>
+    <button class="nav-btn" style="background:var(--success); width:100%; margin-top:5px" onclick="addChild()">+ Add Child</button>
+</div>
+
+        <div class="section-title">📝 Purpose</div>
+        <textarea id="inPurpose" oninput="sync()" placeholder="Purpose">FOR WHATEVER LEGAL PURPOSE IT MAY SERVE</textarea>
+
+        <div class="section-title">📅 Record History</div>
+        <input type="date" id="logDate" onchange="loadLog()">
+        <div class="log-list-scroll" id="logViewer"></div>
+    </div>
+
+    <div id="main-content" style="flex-grow:1; display:flex; flex-direction:column;">
+        <div id="nav-bar">
+            <div>
+                <button class="nav-btn" style="background:#95a5a6" onclick="resetForm()">📄 New</button>
+                <button class="nav-btn" style="background:var(--accent)" onclick="saveAndLog()">💾 Save</button>
+            </div>
+            <div>
+                <button class="nav-btn" style="background:var(--primary)" onclick="document.body.classList.toggle('full-view')">👁️ Full View</button>
+                <button class="nav-btn" style="background:var(--success)" onclick="printDoc()">🖨️ Print Document</button>
+            </div>
+        </div>
+
+        <div id="preview-area">
+            <div class="paper" id="printout">
+                <div class="header-container f-tnr bold center">
+                    <div class="logo-box"><img id="vLogoL"></div>
+                    <div style="flex-grow:1; text-transform:uppercase; font-size:11pt;">
+                        <div>Republic of the Philippines</div>
+                        <div id="vProv">Province of _______</div>
+                        <div id="vMun">Municipality of _______</div>
+                        <div id="vBrgy">Barangay _______</div>
+                        <div style="margin-top:5px; font-family:'EB Garamond'; font-size:12pt;">Office of the Punong Barangay</div>
+                    </div>
+                    <div class="logo-box"><img id="vLogoR"></div>
+                </div>
+
+                <div id="dynamicBody"></div>
+
+                <div class="signature-section f-tnr">
+                    <div class="justify" style="font-size:12pt;">Certified true and Correct</div>
+                    <div style="margin-top:20px;">
+                        <div class="bold justify" style="font-size:12pt; text-transform:uppercase;" id="vCap">NAME OF PUNONG BARANGAY</div>
+                        <div class="justify" style="font-size:12pt;">Punong Barangay</div>
+                    </div>
+                </div>
+
+                <div class="footer-seal f-eb bold center">
+                    OFFICIAL SEAL
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        
+let db = [];
+
+        function initApp() {
+            db = JSON.parse(localStorage.getItem('brgy_data')) || [];
+            loadSet();
+            document.getElementById('logDate').valueAsDate = new Date();
+            loadLog();
+            sync();
+        }
+
+        function getOrdinalDate() {
+            const d = new Date();
+            const day = d.getDate();
+            const months = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
+            let suffix = "th";
+            if (day % 10 == 1 && day != 11) suffix = "st";
+            else if (day % 10 == 2 && day != 12) suffix = "nd";
+            else if (day % 10 == 3 && day != 13) suffix = "rd";
+            return `${day}${suffix} day of ${months[d.getMonth()]} ${d.getFullYear()}`;
+        }
+
+        function sync() {
+            const name = document.getElementById('inName').value.toUpperCase() || "____________________";
+            const age = document.getElementById('inAge').value || "____";
+            const gender = document.getElementById('inGender').value;
+            const status = document.getElementById('inStatus').value;
+            const purpose = document.getElementById('inPurpose').value.toUpperCase() || "FOR WHATEVER LEGAL PURPOSE IT MAY SERVE";
+            const type = document.getElementById('docType').value;
+            
+            const resYear = document.getElementById('inResYear').value || "____";
+            const purok = (document.getElementById('inPurok').value || "__________").toUpperCase();
+
+            const bizName = document.getElementById('inBizName').value.toUpperCase() || "____________________";
+            const bizNature = document.getElementById('inBizNature').value.toUpperCase() || "____________________";
+            const bizPurok = document.getElementById('inBizPurok').value.toUpperCase() || "____________________";
+
+            const brgy = (document.getElementById('setBrgy').value || "_______").toUpperCase();
+            const mun = (document.getElementById('setMun').value || "_______").toUpperCase();
+            const prov = (document.getElementById('setProv').value || "_______").toUpperCase();
+            
+            const pron = (gender === "MALE") ? "he" : "she";
+            const dateStr = getOrdinalDate();
+            const currYear = new Date().getFullYear();
+
+            const isBusiness = type === "BARANGAY BUSINESS CLEARANCE";
+            document.getElementById('businessInputs').style.display = isBusiness ? "flex" : "none";
+            document.getElementById('personalDetails').style.display = isBusiness ? "none" : "block";
+
+            let html = "";
+            if (type === "BARANGAY CLEARANCE") {
+                html = `<div class="f-eb bold center title-main">${type}</div><div class="f-eb bold justify salutation">TO WHOM IT MAY CONCERN:</div><div class="f-eb justify" style="text-indent: 50px;">This is to certify that <b>${name}</b>, ${age} years old, ${gender}, ${status}, is a bona fide resident of Barangay ${brgy}, ${mun}, ${prov}, is known to the undersigned as a law-abiding citizen having good morals and that ${pron} has no derogatory records in the Barangay.</div><br><div class="f-tnr center">This clearance is issued upon the request of the above-named person for <br><b>(${purpose})</b></div><br><div class="f-tnr center">This certification is issued this ${dateStr} at Barangay ${brgy}, ${mun}, ${prov}.</div>`;
+            } else if (type === "CERTIFICATE OF INDIGENCY") {
+                let cleanPurpose = purpose.replace(/^FOR\s+/i, ""); 
+                html = `<div class="f-eb bold center title-main">${type}</div><div class="f-eb bold justify salutation">TO WHOM IT MAY CONCERN:</div><div class="f-eb justify" style="text-indent: 50px;">This is to certify that <b>${name}</b>, ${age > 17 ? 'ADULT' : 'MINOR'}, ${status}, ${gender} and a resident of Barangay ${brgy}, ${mun}, ${prov}, is known to be an indigent and underprivileged resident of this Barangay.</div><br><div class="f-eb justify" style="text-indent: 50px;">Based on our records and personal knowledge, the above-named person belongs to a low-income household and does not have the financial capacity to support certain basic needs without assistance. This certification is issued for ${cleanPurpose.toLowerCase()} ${gender === 'MALE' ? 'him' : 'her'}.</div><br><div class="f-tnr center">Issued this ${dateStr} at Barangay ${brgy}, ${mun}, ${prov}.</div>`;
+            } else if (type === "BARANGAY BUSINESS CLEARANCE") {
+                html = `<div class="f-eb bold center title-main">${type}</div><div class="f-eb bold justify salutation">TO WHOM IT MAY CONCERN:</div><div class="f-eb justify" style="text-indent: 50px;">This is to certify that <b>${name}</b> with residence address at <b>Barangay ${brgy}, ${mun}, ${prov}</b> is hereby granted clearance to operate the business of owner/proprietor of <b>${bizName} (NATURE OF BUSINESS: ${bizNature})</b>, located at <b>${bizPurok}, Barangay ${brgy}, ${mun}, ${prov}</b>, has been granted permission to operate a business within the jurisdiction of Barangay ${brgy} in accordance with Republic Act No. 7160, otherwise known as Local Government Code of 1991.</div><br><div class="f-eb justify" style="text-indent: 50px;">This certification is issued upon the request of the subject person/establishment for <b>${purpose}</b>.</div><br><div class="f-eb justify" style="text-indent: 50px;">This Barangay Business Clearance is valid until <b>DECEMBER 31, ${currYear}</b>, unless earlier revoked for cause.</div><br><div class="f-tnr center">Issued this ${dateStr} at Barangay ${brgy}, ${mun}, ${prov}.</div>`;
+            } else if (type === "CERTIFICATE OF RESIDENCY") {
+                html = `
+                <div class="f-eb bold center title-main">${type}</div>
+                <div class="f-eb bold justify salutation">TO WHOM IT MAY CONCERN:</div>
+                <div class="f-tnr justify" style="font-size:12pt; text-indent:50px;">
+                    This is to certify that <b>${name}</b>, ${age} years old, ${gender}, ${status}, is a bona fide resident of <b>${purok}</b>, Barangay ${brgy}, ${mun}, ${prov}, and has been residing at this Barangay since <b>${resYear}</b> up to the present.
+                </div>
+                <br><br>
+                <div class="f-tnr justify" style="font-size:12pt; text-indent:50px;">
+                    This certification is being issued upon the request of the above-named person for whatever legal purpose it may serve.
+                </div>
+                <br><br>
+                <div class="f-tnr center" style="font-size:12pt;">Issued this ${dateStr} at Barangay ${brgy}, ${mun}, ${prov}.</div>`;
+            }
+            document.getElementById('dynamicBody').innerHTML = html;
+        }
+
+        function saveAndLog() {
+            const nameVal = document.getElementById('inName').value.trim();
+            const type = document.getElementById('docType').value;
+            if(!nameVal) return alert("Please enter a name.");
+
+            const entry = {
+                date: new Date().toISOString().split('T')[0],
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                name: nameVal,
+                type: type,
+                age: document.getElementById('inAge').value,
+                gender: document.getElementById('inGender').value,
+                status: document.getElementById('inStatus').value,
+                resYear: document.getElementById('inResYear').value,
+                purok: document.getElementById('inPurok').value,
+                bizName: document.getElementById('inBizName').value,
+                bizNature: document.getElementById('inBizNature').value,
+                bizPurok: document.getElementById('inBizPurok').value,
+                purpose: document.getElementById('inPurpose').value
+            };
+            
+            db.push(entry);
+            localStorage.setItem('brgy_data', JSON.stringify(db));
+            alert("Record Saved Successfully.");
+            loadLog();
+        }
+
+        function loadLog() {
+            const target = document.getElementById('logDate').value;
+            const viewer = document.getElementById('logViewer');
+            viewer.innerHTML = "";
+            const filtered = db.filter(r => r.date === target);
+            
+            if(!filtered.length) {
+                viewer.innerHTML = "<div style='padding:15px; font-size:0.8rem; color:#999'>No records for this date.</div>";
+                return;
+            }
+
+            filtered.forEach(r => {
+                const div = document.createElement('div');
+                div.className = "log-item";
+                div.innerHTML = `<b>${r.name.toUpperCase()}</b><br><small>${r.time} — ${r.type}</small>`;
+                div.onclick = () => fillForm(r);
+                viewer.appendChild(div);
+            });
+        }
+
+        function searchRecords() {
+            const q = document.getElementById('searchInp').value.toLowerCase();
+            const res = document.getElementById('searchResults');
+            res.innerHTML = "";
+            if(!q) { res.style.display="none"; return; }
+
+            const matches = db.filter(r => r.name.toLowerCase().includes(q));
+            if(matches.length) {
+                res.style.display="block";
+                matches.forEach(r => {
+                    const d = document.createElement('div');
+                    d.className = "search-item";
+                    d.innerHTML = `<div style="font-weight:bold; font-size:0.9rem;">${r.name.toUpperCase()}</div><div class="meta">${r.type} — ${r.date}</div>`;
+                    d.onclick = () => { fillForm(r); res.style.display="none"; document.getElementById('searchInp').value=""; };
+                    res.appendChild(d);
+                });
+            } else { res.style.display="none"; }
+        }
+
+        function fillForm(r) {
+            document.getElementById('docType').value = r.type;
+            document.getElementById('inName').value = r.name;
+            document.getElementById('inAge').value = r.age;
+            document.getElementById('inGender').value = r.gender;
+            document.getElementById('inStatus').value = r.status;
+            document.getElementById('inResYear').value = r.resYear || "";
+            document.getElementById('inPurok').value = r.purok || "";
+            document.getElementById('inBizName').value = r.bizName || "";
+            document.getElementById('inBizNature').value = r.bizNature || "";
+            document.getElementById('inBizPurok').value = r.bizPurok || "";
+            document.getElementById('inPurpose').value = r.purpose;
+            sync();
+        }
+
+        function saveSet() {
+            const s = { p: document.getElementById('setProv').value, m: document.getElementById('setMun').value, b: document.getElementById('setBrgy').value, c: document.getElementById('setCap').value };
+            localStorage.setItem('brgy_settings', JSON.stringify(s));
+            loadSet();
+            sync();
+        }
+
+        function loadSet() {
+            const s = JSON.parse(localStorage.getItem('brgy_settings'));
+            if(s) {
+                document.getElementById('setProv').value = s.p; 
+                document.getElementById('setMun').value = s.m;
+                document.getElementById('setBrgy').value = s.b; 
+                document.getElementById('setCap').value = s.c;
+                document.getElementById('vProv').innerText = "Province of " + s.p;
+                document.getElementById('vMun').innerText = "Municipality of " + s.m;
+                document.getElementById('vBrgy').innerText = "Barangay " + s.b;
+                document.getElementById('vCap').innerText = "HON. " + s.c;
+            }
+            document.getElementById('vLogoL').src = localStorage.getItem('logoL') || '';
+            document.getElementById('vLogoR').src = localStorage.getItem('logoR') || '';
+        }
+
+        function storeLogo(input, side) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => { localStorage.setItem('logo' + side, e.target.result); loadSet(); };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('inName').value = "";
+            document.getElementById('inAge').value = "";
+            document.getElementById('inResYear').value = "";
+            document.getElementById('inPurok').value = "";
+            document.getElementById('inBizName').value = "";
+            document.getElementById('inBizNature').value = "";
+            document.getElementById('inBizPurok').value = "";
+            document.getElementById('inPurpose').value = "FOR WHATEVER LEGAL PURPOSE IT MAY SERVE";
+            sync();
+        }
+
+        function printDoc() { window.print(); }
+    </script>
+	<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('Service Worker Registered'))
+        .catch(err => console.log('Service Worker Failed', err));
+    });
+  }
+</script>
+</body>
+</html>
