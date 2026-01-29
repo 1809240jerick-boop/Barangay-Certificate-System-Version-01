@@ -1,57 +1,606 @@
-const CACHE_NAME = 'brgy-pro-v4'; // Increment this (v2, v3) whenever you push to GitHub
-const ASSETS_TO_CACHE = [
-  './',
-  './index.html',
-  'https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;700&display=swap'
-];
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barangay Pro v9.3 - Address Type Update</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=EB+Garamond:wght@400;700&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Modern UI Variables */
+            --bg-app: #f0f4f8; 
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --primary: #3b82f6; 
+            --t2-bg: #e8f5e9; 
+            --t2-accent: #1b5e20;
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
 
-// 1. Install Event: Force immediate activation
-self.addEventListener('install', (event) => {
-  self.skipWaiting(); // This forces the waiting SW to become active immediately
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
-  );
-});
+        * { box-sizing: border-box; }
+        body { 
+            font-family: 'Inter', sans-serif; margin: 0; height: 100vh; display: flex; 
+            background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%); 
+            color: var(--text-main); overflow: hidden; 
+        }
 
-// 2. Activate Event: Claim clients immediately
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
-      );
-    }).then(() => self.clients.claim()) // This makes the SW take control of the page immediately without a reload
-  );
-});
+        /* --- SIDEBAR --- */
+        #app-sidebar {
+            width: 420px; 
+            background: var(--glass-bg); 
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border-right: 1px solid white;
+            display: flex; flex-direction: column; z-index: 50; 
+            box-shadow: var(--shadow-lg);
+        }
 
-// 3. Fetch Event: Network First for the App, Cache First for Assets
-self.addEventListener('fetch', (event) => {
-  // Check if the request is for the main page (HTML)
-  if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request)
-        .then((networkResponse) => {
-          // If network works, update the cache and return the fresh version
-          return caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, networkResponse.clone());
-            return networkResponse;
-          });
-        })
-        .catch(() => {
-          // If network fails (offline), return the cached version
-          return caches.match(event.request);
-        })
-    );
-  } else {
-    // For images, fonts, styles, scripts: Use Cache First for speed
-    event.respondWith(
-      caches.match(event.request).then((response) => {
-        return response || fetch(event.request);
-      })
-    );
-  }
-});
+        .brand { 
+            padding: 25px; font-size: 1.25rem; font-weight: 800; color: var(--text-main); 
+            background: linear-gradient(to right, #3b82f6, #8b5cf6); 
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
 
+        /* TABS */
+        .nav-pills { padding: 0 20px 15px 20px; display: flex; gap: 0; border-bottom: 1px solid #e2e8f0; }
+        .nav-btn {
+            flex: 1; padding: 12px; border: none; background: transparent; color: var(--text-muted);
+            font-size: 0.85rem; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .nav-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .nav-btn:hover { color: var(--primary); background: rgba(59, 130, 246, 0.05); }
 
+        .tab-content { padding: 25px; overflow-y: auto; flex-grow: 1; display: none; }
+        .tab-content.active { display: block; animation: fadeUp 0.3s ease; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* FORMS */
+        .sec-lbl { 
+            font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; 
+            letter-spacing: 0.05em; margin: 20px 0 10px 0; display: flex; align-items: center; gap: 8px;
+        }
+        .sec-lbl::after { content: ""; height: 1px; flex-grow: 1; background: #e2e8f0; }
+        
+        input, select, textarea {
+            width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px;
+            font-family: inherit; font-size: 0.9rem; background: white; color: var(--text-main); 
+            margin-bottom: 10px; transition: all 0.2s;
+        }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); }
+        
+        .row { display: flex; gap: 12px; } .col { flex: 1; } .hidden { display: none !important; }
+
+        .btn { 
+            padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; 
+            width: 100%; margin-top: 15px; font-size: 0.9rem; transition: transform 0.1s;
+            display: flex; justify-content: center; align-items: center; gap: 8px;
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; }
+        .btn-success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; }
+        .btn-ghost { background: white; border: 1px solid #cbd5e1; color: var(--text-muted); }
+
+        /* PREVIEW AREA */
+        #main-area { flex-grow: 1; display: flex; flex-direction: column; position: relative; }
+        #toolbar { 
+            height: 60px; background: rgba(255,255,255,0.9); backdrop-filter: blur(5px);
+            border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; 
+            padding: 0 30px; font-weight: 600; color: var(--text-muted);
+        }
+        #paper-scroll { flex-grow: 1; overflow-y: auto; padding: 50px; display: flex; justify-content: center; align-items: flex-start; }
+        
+        .paper {
+            width: 210mm; height: 297mm; background: white; 
+            box-shadow: 0 20px 60px -10px rgba(0,0,0,0.15); border-radius: 2px;
+            position: relative; display: flex; flex-direction: column; overflow: hidden; transform: scale(0.9); transform-origin: top center;
+        }
+
+        /* --- DOC STYLES --- */
+        .f-eb { font-family: 'EB Garamond', serif; }
+        .f-tnr { font-family: 'Times New Roman', Times, serif; }
+        .bold { font-weight: bold; }
+        .center { text-align: center; }
+        .justify { text-align: justify; }
+
+        .doc-title { font-family: 'Oswald', sans-serif; font-size: 26pt; text-transform: uppercase; margin-bottom: 25px; text-align: center; text-decoration: underline; text-decoration-color: #cbd5e1; text-underline-offset: 8px; }
+        .doc-text { font-size: 12.5pt; line-height: 1.5; text-indent: 40px; margin-bottom: 15px; position: relative; z-index: 1; text-align: justify; }
+
+        /* T1 */
+        .t1-body { padding: 25mm; flex-grow: 1; display: flex; flex-direction: column; }
+        .t1-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px; border-bottom: 2px solid black; padding-bottom: 10px; }
+        .t1-logo { width: 90px; height: 90px; object-fit: contain; border-radius: 50%; }
+
+        /* T2 */
+        .t2-container { display: flex; height: 100%; }
+        .t2-sidebar { width: 260px; background: var(--t2-bg); border-right: 4px solid var(--t2-accent); padding: 20px 15px; display: flex; flex-direction: column; text-align: center; flex-shrink: 0; }
+        .t2-content { flex-grow: 1; display: flex; flex-direction: column; position: relative; }
+        .t2-banner { background: linear-gradient(135deg, #1565C0 0%, #1E88E5 100%); color: white; padding: 15px 20px; display: flex; align-items: center; gap: 15px; border-bottom: 5px solid #FFC107; }
+        .pic-wrapper { padding: 20px 40px 0 40px; display: flex; justify-content: flex-end; }
+        .pic-box { width: 120px; height: 120px; border: 1px solid #ccc; background: #f8f9fa; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: #999; object-fit: cover; }
+        
+        .off-role { font-size: 0.65rem; font-weight: 700; color: var(--t2-accent); text-transform: uppercase; }
+        .off-name { font-size: 0.85rem; font-weight: 700; color: #0f172a; margin-bottom: 8px; line-height: 1.1; }
+        .pb-container { margin-top: 30px; margin-bottom: 25px; }
+        .vm-box { margin-top: auto; padding-top: 20px; border-top: 2px solid var(--t2-accent); }
+        .vm-title { font-weight: bold; color: var(--t2-accent); font-size: 0.8rem; margin-bottom: 4px; }
+        .vm-text { font-size: 0.7rem; font-style: italic; line-height: 1.2; margin-bottom: 10px; color: #333; }
+        
+        #t2-watermark { position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%); width: 70%; opacity: 0.08; pointer-events: none; z-index: 0; }
+        img[src=""], img:not([src]) { display: none !important; }
+
+        .sig-block { margin-top: 50px; margin-bottom: 30px; text-align: center; margin-left: auto; width: 250px; }
+        .footer-receipt { margin-top: auto; font-family: 'Courier New', monospace; font-size: 9pt; border: 1px solid #000; padding: 5px; width: 220px; background: rgba(255,255,255,0.95); }
+
+        /* MODALS */
+        .modal-overlay {
+            display: none; position: fixed; top:0; left:0; width:100%; height:100%; 
+            background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 100; align-items: center; justify-content: center;
+        }
+        .modal-box { 
+            background: white; width: 500px; padding: 30px; border-radius: 12px; 
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1); position: relative; animation: zoomIn 0.2s ease;
+        }
+        @keyframes zoomIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        .modal-row { display: flex; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding: 12px 0; font-size: 0.95rem; }
+        .modal-label { color: var(--text-muted); font-weight: 500; }
+        .close-btn { position: absolute; top: 15px; right: 15px; background: #f1f5f9; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; color: #64748b; font-weight: bold; }
+        .close-btn:hover { background: #e2e8f0; color: #ef4444; }
+
+        #alertBox { width: 350px; text-align: center; }
+        #alertIcon { font-size: 3rem; margin-bottom: 10px; display: block; }
+        #alertTitle { font-size: 1.2rem; font-weight: 700; margin-bottom: 8px; color: var(--text-main); }
+        #alertMsg { color: var(--text-muted); margin-bottom: 20px; line-height: 1.5; }
+
+        @media print {
+            @page { size: A4 portrait; margin: 0; }
+            body { background: white; display: block; }
+            #app-sidebar, #toolbar, .modal-overlay { display: none !important; }
+            #main-area { display: block; height: auto; overflow: visible; background: white; }
+            #paper-scroll { display: block; padding: 0; margin: 0; overflow: visible; }
+            .paper { box-shadow: none; margin: 0; width: 210mm; height: 297mm; page-break-after: always; transform: none; }
+            .t2-sidebar, .t2-banner, .footer-receipt { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="modalRecord" class="modal-overlay">
+    <div class="modal-box">
+        <button class="close-btn" onclick="closeModal('modalRecord')">&times;</button>
+        <h3 style="margin-top:0; color:var(--primary);">📜 Record Details</h3>
+        <div id="modalContent"></div>
+    </div>
+</div>
+
+<div id="modalAlert" class="modal-overlay">
+    <div class="modal-box" id="alertBox">
+        <div id="alertIcon"></div>
+        <div id="alertTitle"></div>
+        <div id="alertMsg"></div>
+        <button class="btn btn-primary" onclick="closeModal('modalAlert')">OK, Understood</button>
+    </div>
+</div>
+
+<div id="app-sidebar">
+    <div class="brand">
+        <span>Barangay Pro</span>
+        <span style="font-size:0.7rem; background:rgba(255,255,255,0.2); color:white; padding:2px 6px; border-radius:4px;">v2</span>
+    </div>
+    <div class="nav-pills">
+        <button class="nav-btn active" onclick="setTab('issue')">Issuance</button>
+        <button class="nav-btn" onclick="setTab('records')">Records</button>
+        <button class="nav-btn" onclick="setTab('settings')">Configuration</button>
+    </div>
+
+    <div id="tab-issue" class="tab-content active">
+        <div class="sec-lbl">Document Details</div>
+        <select id="docType" onchange="syncUI()">
+            <option value="BARANGAY CLEARANCE">Barangay Clearance</option>
+            <option value="CERTIFICATE OF INDIGENCY">Certificate of Indigency</option>
+            <option value="BARANGAY BUSINESS CLEARANCE">Barangay Business Clearance</option>
+            <option value="CERTIFICATE OF RESIDENCY">Certificate of Residency</option>
+        </select>
+        <input type="text" id="inName" placeholder="Resident Name" oninput="render()">
+        
+        <div class="row">
+            <div class="col"><select id="inAgeType" onchange="render()"><option value="ADULT">Legal Age</option><option value="MINOR">Minor</option></select></div>
+            <div class="col"><select id="inGender" onchange="render()"><option value="MALE">Male</option><option value="FEMALE">Female</option></select></div>
+        </div>
+        
+        <div class="row">
+            <div class="col"><select id="inStatus" onchange="render()"><option value="SINGLE">Single</option><option value="MARRIED">Married</option><option value="WIDOWED">Widowed</option></select></div>
+            <div class="col hidden" id="col-resyear"><input type="number" id="inResYear" placeholder="Year" oninput="render()"></div>
+        </div>
+
+        <div class="sec-lbl">Address Type</div>
+        <div class="row">
+            <div class="col" style="flex:0 0 35%;">
+                <select id="addrType" onchange="render()">
+                    <option value="PUROK">Purok</option>
+                    <option value="SITIO">Sitio</option>
+                </select>
+            </div>
+            <div class="col">
+                <input type="text" id="inPurok" placeholder="Name/Number" oninput="render()">
+            </div>
+        </div>
+        
+        <div class="sec-lbl">Resident Photo (Template 2)</div>
+        <input type="file" id="inPhoto" onchange="saveImg(this, 'Photo')">
+
+        <div id="bizGroup" class="hidden" style="background:#f8fafc; border:1px solid #e2e8f0; padding:15px; border-radius:8px; margin-bottom:15px;">
+            <div style="color:var(--primary); font-size:0.75rem; font-weight:800; margin-bottom:8px; text-transform:uppercase;">Business Details</div>
+            <input type="text" id="inBizName" placeholder="Business Name" oninput="render()">
+            <input type="text" id="inBizNature" placeholder="Nature" oninput="render()">
+            <input type="text" id="inBizLoc" placeholder="Location" oninput="render()">
+        </div>
+
+        <div class="sec-lbl">Requestor</div>
+        <select id="reqType" onchange="toggleReq()">
+            <option value="SELF">The Subject (Self)</option>
+            <option value="AGENCY">Agency / Office</option>
+            <option value="REP">Representative</option>
+        </select>
+        <input type="text" id="inReqName" class="hidden" placeholder="Name of Agency or Rep" oninput="render()">
+        
+        <div class="sec-lbl">Purpose</div>
+        <textarea id="inPurpose" rows="2" oninput="render()">WHATEVER LEGAL PURPOSE IT MAY SERVE</textarea>
+
+        <div class="sec-lbl">Receipt Footer</div>
+        <div class="row">
+            <div class="col"><input type="text" id="inOR" placeholder="O.R. No." oninput="render()"></div>
+            <div class="col"><input type="number" id="inPrice" placeholder="Amount" oninput="render()"></div>
+        </div>
+        <input type="text" id="inControl" placeholder="Control #" oninput="render()">
+
+        <button class="btn btn-success" onclick="saveRecord()">Save Record</button>
+        <button class="btn btn-primary" onclick="window.print()">🖨️ Print Document</button>
+        <button class="btn btn-ghost" onclick="resetForm()">↺ Reset</button>
+    </div>
+
+    <div id="tab-records" class="tab-content">
+        <div class="sec-lbl">Daily Records</div>
+        <div class="row" style="margin-bottom:10px;">
+            <div class="col"><input type="date" id="recDate" onchange="loadRecords()"></div>
+        </div>
+        <div style="background:white; border:1px solid #e2e8f0; border-radius:8px; overflow:hidden; box-shadow:var(--shadow-sm);">
+            <table style="width:100%; border-collapse:collapse; font-size:0.85rem; color:var(--text-main);">
+                <thead style="background:#f8fafc; color:var(--text-muted);">
+                    <tr><th style="padding:12px; text-align:left;">Name</th><th style="padding:12px; text-align:right;">Action</th></tr>
+                </thead>
+                <tbody id="recBody"></tbody>
+            </table>
+            <div style="padding:15px; text-align:right; font-weight:bold; color:var(--success); border-top:1px solid #e2e8f0;" id="totalCol">₱ 0.00</div>
+        </div>
+        <button class="btn btn-primary" onclick="printReport()">🖨️ Print Report (A4)</button>
+    </div>
+
+    <div id="tab-settings" class="tab-content">
+        <div class="sec-lbl" style="color:var(--primary)">Template Style</div>
+        <div style="display:flex; gap:10px; margin-bottom:15px;">
+            <label class="btn btn-ghost" style="margin:0; font-size:0.8rem; padding:8px;"><input type="radio" name="tpl" value="1" checked onchange="saveSet()"> Classic</label>
+            <label class="btn btn-ghost" style="margin:0; font-size:0.8rem; padding:8px;"><input type="radio" name="tpl" value="2" onchange="saveSet()"> Modified</label>
+        </div>
+        
+        <div id="t2-colors" class="hidden">
+            <div class="sec-lbl">Custom Colors (T2)</div>
+            <div class="row">
+                <div class="col"><span style="font-size:0.7rem">Sidebar</span><input type="color" id="colBg" value="#e8f5e9" onchange="saveSet()"></div>
+                <div class="col"><span style="font-size:0.7rem">Accents</span><input type="color" id="colTxt" value="#1b5e20" onchange="saveSet()"></div>
+            </div>
+        </div>
+
+        <div class="sec-lbl">LGU Configuration</div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:0.85rem;">
+            <label><input type="checkbox" id="checkCity" onchange="saveSet()"> City?</label>
+            <label><input type="checkbox" id="checkBarmm" onchange="saveSet()"> BARMM?</label>
+        </div>
+        <input type="text" id="setProv" placeholder="Province" oninput="saveSet()">
+        <input type="text" id="setMun" placeholder="Municipality / City" oninput="saveSet()">
+        <input type="text" id="setBrgy" placeholder="Barangay" oninput="saveSet()">
+        <div style="margin-top:5px; font-size:0.7rem; color:var(--primary); font-weight:bold;">PUNONG BARANGAY:</div>
+        <input type="text" id="setCap" style="border-color:var(--primary);" oninput="saveSet()">
+
+        <div class="sec-lbl">Officials List</div>
+        <input type="text" id="kag1" placeholder="Kagawad 1" oninput="saveSet()">
+        <input type="text" id="kag2" placeholder="Kagawad 2" oninput="saveSet()">
+        <input type="text" id="kag3" placeholder="Kagawad 3" oninput="saveSet()">
+        <input type="text" id="kag4" placeholder="Kagawad 4" oninput="saveSet()">
+        <input type="text" id="kag5" placeholder="Kagawad 5" oninput="saveSet()">
+        <input type="text" id="kag6" placeholder="Kagawad 6" oninput="saveSet()">
+        <input type="text" id="kag7" placeholder="Kagawad 7" oninput="saveSet()">
+        <div style="border-top:1px dashed #e2e8f0; margin:10px 0;"></div>
+        <input type="text" id="setSk" placeholder="SK Chairperson" oninput="saveSet()">
+        <input type="text" id="setSec" placeholder="Secretary" oninput="saveSet()">
+        <input type="text" id="setTreas" placeholder="Treasurer" oninput="saveSet()">
+
+        <div class="sec-lbl">Official Logos</div>
+        <div class="row">
+            <div class="col"><span style="font-size:0.7rem">Left</span><input type="file" onchange="saveImg(this, 'L')"></div>
+            <div class="col"><span style="font-size:0.7rem">Right</span><input type="file" onchange="saveImg(this, 'R')"></div>
+        </div>
+        <span style="font-size:0.7rem">Watermark</span><input type="file" onchange="saveImg(this, 'W')">
+
+        <div id="t2-extras" class="hidden">
+            <div class="sec-lbl">Vision & Mission</div>
+            <textarea id="setVis" rows="2" placeholder="Vision" oninput="saveSet()"></textarea>
+            <textarea id="setMis" rows="2" placeholder="Mission" oninput="saveSet()"></textarea>
+        </div>
+    </div>
+</div>
+
+<div id="main-area">
+    <div id="toolbar">
+        <span> PREVIEW</span>
+        <span id="clock" style="font-weight:500; font-size:0.9rem;">00:00</span>
+    </div>
+    <div id="paper-scroll">
+        <div id="paper-container" class="paper"></div>
+    </div>
+</div>
+
+<script>
+    let db = [];
+    const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+    function init() {
+        db = JSON.parse(localStorage.getItem('bp_db')) || [];
+        loadSet();
+        document.getElementById('recDate').valueAsDate = new Date();
+        loadRec();
+        setInterval(() => document.getElementById('clock').innerText = new Date().toLocaleTimeString(), 1000);
+        syncUI();
+    }
+
+    function showAppAlert(title, msg, type = 'success') {
+        const modal = document.getElementById('modalAlert');
+        const icon = document.getElementById('alertIcon');
+        const t = document.getElementById('alertTitle');
+        const m = document.getElementById('alertMsg');
+        t.innerText = title; m.innerText = msg;
+        if(type === 'success') { icon.innerText = "✅"; t.style.color = "var(--success)"; } 
+        else if (type === 'error') { icon.innerText = "⚠️"; t.style.color = "var(--danger)"; } 
+        else { icon.innerText = "ℹ️"; t.style.color = "var(--primary)"; }
+        modal.style.display = 'flex';
+    }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+    function setTab(n) {
+        document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(e => e.classList.remove('active'));
+        document.getElementById('tab-' + n).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+
+    function syncUI() {
+        const t = document.getElementById('docType').value;
+        document.getElementById('bizGroup').classList.toggle('hidden', t !== "BARANGAY BUSINESS CLEARANCE");
+        document.getElementById('col-resyear').classList.toggle('hidden', t !== "CERTIFICATE OF RESIDENCY");
+        render();
+    }
+    function toggleReq() {
+        const v = document.getElementById('reqType').value;
+        document.getElementById('inReqName').classList.toggle('hidden', v === 'SELF');
+        render();
+    }
+
+    function getOrdinal(d) {
+        if (d > 3 && d < 21) return d + 'th';
+        switch (d % 10) { case 1: return d+"st"; case 2: return d+"nd"; case 3: return d+"rd"; default: return d+"th"; }
+    }
+
+    function render() {
+        const d = getData();
+        const s = getSet();
+        
+        document.documentElement.style.setProperty('--t2-bg', s.cBg);
+        document.documentElement.style.setProperty('--t2-accent', s.cTxt);
+
+        const imgs = { 
+            L: localStorage.getItem('img_L') || '', R: localStorage.getItem('img_R') || '', 
+            W: localStorage.getItem('img_W') || '', P: localStorage.getItem('img_Photo') || ''
+        };
+        const paper = document.getElementById('paper-container');
+        const tpl = document.querySelector('input[name="tpl"]:checked').value;
+        const today = new Date();
+        const dateStr = `this ${getOrdinal(today.getDate())} day of ${months[today.getMonth()]}, ${today.getFullYear()}`;
+        
+        let bodyHTML = `<div class="doc-title">${d.type}</div>`;
+
+        if(d.type === "BARANGAY CLEARANCE") {
+            bodyHTML += `
+                <div class="f-eb bold justify" style="margin-bottom:20px; font-size:12pt;">TO WHOM IT MAY CONCERN:</div>
+                <div class="f-eb justify doc-text"><b>THIS IS TO CERTIFY</b> that <b>${d.name}</b>, ${d.age}, ${d.gender}, ${d.status}, Filipino Citizen, is a bona fide resident of ${d.addrType} ${d.purok}, Barangay ${s.b}, ${s.m}, ${s.p}.</div>
+                <div class="f-eb justify doc-text"><b>CERTIFYING FURTHER</b>, that the above-named person is known to the undersigned as a law-abiding citizen with good moral character and reputation in the community. Records of this office show that ${d.pron} has <b>NO DEROGATORY RECORD</b> or pending case filed against ${d.poss} as of this date.</div>
+                <div class="f-eb justify doc-text">This clearance is hereby issued upon the request of <b>${d.req}</b> for <b>${d.purpose}</b>.</div>
+                <div class="f-tnr center" style="margin-top:30px; font-size:12pt;">Given ${dateStr} at Barangay ${s.b}.</div>
+            `;
+        } else if (d.type === "CERTIFICATE OF INDIGENCY") {
+            bodyHTML += `
+                <div class="f-eb bold justify" style="margin-bottom:20px; font-size:12pt;">TO WHOM IT MAY CONCERN:</div>
+                <div class="f-eb justify doc-text"><b>THIS IS TO CERTIFY</b> that <b>${d.name}</b>, ${d.age}, ${d.status}, Filipino, is a permanent resident of ${d.addrType} ${d.purok}, Barangay ${s.b}, ${s.m}.</div>
+                <div class="f-eb justify doc-text"><b>CERTIFYING FURTHER</b>, that based on the records of this office, the above-named person belongs to an <b>INDIGENT FAMILY</b> in this Barangay. The family's annual income is barely enough to sustain their daily needs.</div>
+                <div class="f-eb justify doc-text">This certification is issued upon the request of <b>${d.req}</b> for the purpose of <b>${d.purpose}</b>.</div>
+                <div class="f-tnr center" style="margin-top:30px; font-size:12pt;">Issued ${dateStr} at Barangay ${s.b}.</div>
+            `;
+        } else if (d.type === "CERTIFICATE OF RESIDENCY") {
+            bodyHTML += `
+                <div class="f-eb bold justify" style="margin-bottom:20px; font-size:12pt;">TO WHOM IT MAY CONCERN:</div>
+                <div class="f-eb justify doc-text"><b>THIS IS TO CERTIFY</b> that <b>${d.name}</b>, ${d.age}, ${d.status}, Filipino, is a bona fide resident of ${d.addrType} ${d.purok}, Barangay ${s.b}.</div>
+                <div class="f-eb justify doc-text">Based on records, ${d.pron} has been residing in this jurisdiction since Year <b>${d.resYear}</b> up to the present date.</div>
+                <div class="f-eb justify doc-text">This certification is issued upon the request of <b>${d.req}</b> for <b>${d.purpose}</b>.</div>
+                <div class="f-tnr center" style="margin-top:30px; font-size:12pt;">Issued ${dateStr}.</div>
+            `;
+        } else if (d.type === "BARANGAY BUSINESS CLEARANCE") {
+            bodyHTML += `
+                <div class="f-eb justify doc-text">Pursuant to the provisions of the Local Government Code of 1991 (R.A. 7160), permission is hereby granted to:</div>
+                <div class="center bold" style="font-size:16pt; margin:15px 0; text-transform:uppercase;">${d.name}</div>
+                <div class="center" style="font-size:11pt;">(Owner / Proprietor)</div>
+                <div class="f-eb justify doc-text" style="margin-top:20px;">To operate the business establishment known as:</div>
+                <div class="center bold" style="font-size:18pt; margin:10px 0; text-transform:uppercase;">${d.bizName}</div>
+                <div class="center" style="font-size:11pt; margin-bottom:20px;">Nature: ${d.bizNature} | Location: ${d.bizLoc}</div>
+                <div class="f-eb justify doc-text">This clearance is granted subject to the condition that the said grantee shall comply with all existing ordinances, rules and regulations governing the operation of the business. Any violation of the provision of laws and ordinances shall be sufficient cause for the revocation of this clearance.</div>
+                <div class="f-eb justify doc-text">This clearance is valid until <b>December 31, ${today.getFullYear()}</b> unless sooner revoked for cause.</div>
+                <div class="f-tnr center" style="margin-top:30px; font-size:12pt;">Given ${dateStr}.</div>
+            `;
+        }
+
+        const sigBlock = `<div class="sig-block f-tnr"><div class="bold" style="text-transform:uppercase; border-bottom:1px solid black; font-size:12pt;">HON. ${s.cap}</div><div style="font-size:11pt;">Punong Barangay</div></div>`;
+        const footerHTML = `<div class="footer-receipt"><div>O.R. No.: <b>${d.or}</b></div><div>Amount : <b>${d.amt ? '₱ '+parseFloat(d.amt).toFixed(2) : ''}</b></div><div>Date : ${today.toLocaleDateString()}</div><div style="font-size:8pt">Ctrl: ${d.ctrl}</div></div>`;
+        
+        const hBarmm = s.isBarmm ? 'AUTONOMOUS REGION IN MUSLIM MINDANAO' : '';
+        const hProv = !s.isCity ? `Province of ${s.p}` : '';
+        const hMun = `${s.isCity?'City':'Municipality'} of ${s.m}`;
+
+        if(tpl === "1") {
+            paper.innerHTML = `
+                <div class="t1-body">
+                    <div class="t1-header f-tnr bold center">
+                        <img src="${imgs.L}" class="t1-logo">
+                        <div style="flex-grow:1; text-transform:uppercase; line-height:1.2;">
+                            <div style="font-size:10pt;">Republic of the Philippines</div>
+                            ${s.isBarmm ? `<div style="font-size:10pt;">${hBarmm}</div>` : ''}
+                            ${!s.isCity ? `<div style="font-size:10pt;">${hProv}</div>` : ''}
+                            <div style="font-size:10pt;">${hMun}</div>
+                            <div style="font-size:16pt; margin:5px 0;">BARANGAY ${s.b}</div>
+                            <div style="font-family:'EB Garamond'; font-size:12pt; font-style:italic; text-transform:none">Office of the Punong Barangay</div>
+                        </div>
+                        <img src="${imgs.R}" class="t1-logo">
+                    </div>
+                    <div style="flex-grow:1; display:flex; flex-direction:column;">${bodyHTML} ${sigBlock}</div>
+                    ${footerHTML}
+                </div>`;
+        } else {
+            const kags = [s.k1, s.k2, s.k3, s.k4, s.k5, s.k6, s.k7].filter(k=>k).map(k=>`<div class="off-name">HON. ${k.toUpperCase()}</div>`).join('');
+            paper.innerHTML = `
+                <div class="t2-container">
+                    <div class="t2-sidebar">
+                        <div class="center" style="margin-bottom:15px;"><img src="${imgs.L}" style="width:90px; height:90px; border-radius:50%"></div>
+                        <div class="pb-container">
+                            <div class="off-role" style="font-size:0.9rem; border-bottom:1px solid var(--t2-accent); padding-bottom:5px; margin-bottom:5px;">Punong Barangay</div>
+                            <div class="off-name" style="font-size:1.1rem;">HON. ${s.cap}</div>
+                        </div>
+                        <div style="margin-bottom:15px;"><div class="off-role" style="margin-bottom:5px;">Sangguniang Barangay</div>${kags}</div>
+                        ${s.sk ? `<div style="margin-bottom:15px;"><div class="off-role">SK Chairperson</div><div class="off-name">HON. ${s.sk.toUpperCase()}</div></div>` : ''}
+                        <div>${s.sec ? `<div class="off-name" style="font-size:0.8rem">${s.sec.toUpperCase()}</div><div class="off-role"> Barangay Secretary</div>` : ''} ${s.tr ? `<div class="off-name" style="font-size:0.8rem; margin-top:5px;">${s.tr.toUpperCase()}</div><div class="off-role">Barangay Treasurer</div>` : ''}</div>
+                        <div class="vm-box">${s.vis ? `<div class="vm-title">VISION</div><div class="vm-text">${s.vis}</div>` : ''} ${s.mis ? `<div class="vm-title">MISSION</div><div class="vm-text">${s.mis}</div>` : ''}</div>
+                    </div>
+                    <div class="t2-content">
+                        ${imgs.W ? `<img id="t2-watermark" src="${imgs.W}">` : ''}
+                        <div class="t2-banner">
+                            <img src="${imgs.R}" style="height:70px; width:70px; border-radius:50%; border:2px solid white;">
+                            <div style="line-height:1.1; text-transform:uppercase;">
+                                <div style="font-size:0.7rem; opacity:0.9;">Republic of the Philippines / ${s.isBarmm?'BARMM / ':''} ${!s.isCity?s.p+' / ':''} ${s.m}</div>
+                                <div style="font-size:2rem; font-weight:700; font-family:'Oswald'">BARANGAY ${s.b}</div>
+                                <div style="font-size:0.85rem; letter-spacing:3px;">Office of the Punong Barangay</div>
+                            </div>
+                        </div>
+                        <div class="pic-wrapper"><img class="pic-box" src="${imgs.P}"></div>
+                        <div style="padding:0 40px 20px 40px; flex-grow:1; display:flex; flex-direction:column;">
+                            ${bodyHTML} ${sigBlock} <div style="margin-top:auto">${footerHTML}</div>
+                        </div>
+                    </div>
+                </div>`;
+        }
+    }
+
+    function getData() {
+        const reqType = document.getElementById('reqType').value;
+        const reqName = (document.getElementById('inReqName').value || "___").toUpperCase();
+        const g = document.getElementById('inGender').value;
+        return {
+            type: document.getElementById('docType').value,
+            name: (document.getElementById('inName').value || "________________").toUpperCase(),
+            gender: g,
+            age: document.getElementById('inAgeType').value === 'ADULT' ? "of legal age" : "a minor",
+            status: document.getElementById('inStatus').value,
+            addrType: document.getElementById('addrType').value,
+            purok: (document.getElementById('inPurok').value || "__________").toUpperCase(),
+            resYear: document.getElementById('inResYear').value || "____",
+            purpose: (document.getElementById('inPurpose').value || "__________").toUpperCase(),
+            bizName: (document.getElementById('inBizName').value || "__________").toUpperCase(),
+            bizNature: (document.getElementById('inBizNature').value || "__________").toUpperCase(),
+            bizLoc: (document.getElementById('inBizLoc').value || "__________").toUpperCase(),
+            pron: g === "MALE" ? "he" : "she", poss: g === "MALE" ? "his" : "her",
+            req: reqType === 'SELF' ? "the above-named person" : (reqType==='AGENCY'?reqName:`${reqName}, representative`),
+            or: document.getElementById('inOR').value || "N/A", amt: document.getElementById('inPrice').value, ctrl: document.getElementById('inControl').value || ""
+        };
+    }
+    function getSet() {
+        return {
+            tpl: document.querySelector('input[name="tpl"]:checked').value,
+            isCity: document.getElementById('checkCity').checked, isBarmm: document.getElementById('checkBarmm').checked,
+            p: (document.getElementById('setProv').value||'').toUpperCase(), m: (document.getElementById('setMun').value||'').toUpperCase(),
+            b: (document.getElementById('setBrgy').value||'').toUpperCase(), cap: (document.getElementById('setCap').value||'').toUpperCase(),
+            k1: document.getElementById('kag1').value, k2: document.getElementById('kag2').value, k3: document.getElementById('kag3').value, k4: document.getElementById('kag4').value, k5: document.getElementById('kag5').value, k6: document.getElementById('kag6').value, k7: document.getElementById('kag7').value,
+            sk: document.getElementById('setSk').value, sec: document.getElementById('setSec').value, tr: document.getElementById('setTreas').value,
+            vis: document.getElementById('setVis').value, mis: document.getElementById('setMis').value,
+            cBg: document.getElementById('colBg').value, cTxt: document.getElementById('colTxt').value
+        };
+    }
+
+    function saveRecord() {
+        const d = getData(); if(!d.name.includes('_')) {
+            db.push({ ...d, id:Date.now(), date:document.getElementById('recDate').value });
+            localStorage.setItem('bp_db', JSON.stringify(db)); 
+            showAppAlert("Success!", "Record saved successfully.", "success");
+            loadRec(); setTab('records');
+        } else {
+            showAppAlert("Name Required", "Please enter the resident's name.", "error");
+        }
+    }
+    function loadRecords() { loadRec(); }
+    function loadRec() {
+        const t = document.getElementById('recBody'); t.innerHTML = ""; let tot = 0; const dt = document.getElementById('recDate').value;
+        db.filter(r=>r.date===dt).forEach(r=>{ 
+            const amt = parseFloat(r.amt||0); tot+=amt; 
+            t.innerHTML+=`<tr style="border-bottom:1px solid #f1f5f9; transition:0.2s; cursor:pointer;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'" onclick='viewFull(${JSON.stringify(r)})'><td style="padding:12px;"><b>${r.name}</b><br><span style="font-size:0.7rem; color:#64748b">${r.type}</span></td><td style="text-align:right; padding:12px;">₱ ${amt.toFixed(2)}</td></tr>`; 
+        });
+        document.getElementById('totalCol').innerText = "₱ " + tot.toFixed(2);
+    }
+    function viewFull(r) {
+        let h = `<div class="modal-row"><span class="modal-label">Type</span><span>${r.type}</span></div>
+        <div class="modal-row"><span class="modal-label">Name</span><span>${r.name}</span></div>
+        <div class="modal-row"><span class="modal-label">Gender/Status</span><span>${r.gender} / ${r.status}</span></div>
+        <div class="modal-row"><span class="modal-label">Address</span><span>${r.addrType} ${r.purok}</span></div>
+        <div class="modal-row"><span class="modal-label">Purpose</span><span>${r.purpose}</span></div>
+        ${r.type.includes("BUSINESS") ? `<div class="modal-row"><span class="modal-label">Business</span><span>${r.bizName}</span></div>` : ''}
+        <div class="modal-row"><span class="modal-label">O.R. / Amount</span><span>${r.or} / ₱ ${r.amt}</span></div>
+        <div class="modal-row"><span class="modal-label">Control #</span><span>${r.ctrl}</span></div>`;
+        document.getElementById('modalContent').innerHTML = h; document.getElementById('modalRecord').style.display = 'flex';
+    }
+
+    function printReport() {
+        const dt = document.getElementById('recDate').value;
+        const records = db.filter(r => r.date === dt);
+        if(records.length === 0) return showAppAlert("Notice", "No records found for this date.", "info");
+        let total = 0;
+        const rows = records.map(r => { total += parseFloat(r.amt || 0); return `<tr><td style="padding:5px; border-bottom:1px solid #ddd">${r.name}</td><td style="padding:5px; border-bottom:1px solid #ddd; font-size:0.8rem">${r.type}</td><td style="padding:5px; border-bottom:1px solid #ddd">${r.or}</td><td style="padding:5px; border-bottom:1px solid #ddd; text-align:right">₱ ${parseFloat(r.amt).toFixed(2)}</td></tr>`; }).join('');
+        const win = window.open('', '', 'height=600,width=800');
+        win.document.write(`<html><head><title>Daily Report - ${dt}</title><style>body { font-family: sans-serif; padding: 20px; } table { width: 100%; border-collapse: collapse; } th { text-align: left; border-bottom: 2px solid #000; padding: 5px; } .total { text-align: right; font-weight: bold; margin-top: 20px; border-top: 1px solid #000; padding-top: 10px; } h2 { margin-bottom: 5px; } .meta { color: #666; font-size: 0.9rem; margin-bottom: 20px; }</style></head><body><h2>Transaction Report</h2><div class="meta">Date: ${dt}</div><table><thead><tr><th>Name</th><th>Document</th><th>O.R. #</th><th style="text-align:right">Amount</th></tr></thead><tbody>${rows}</tbody></table><div class="total">Total Collection: ₱ ${total.toFixed(2)}</div></body></html>`);
+        win.document.close(); win.print();
+    }
+
+    function saveSet() { const s = getSet(); localStorage.setItem('bp_conf', JSON.stringify(s)); document.getElementById('t2-extras').classList.toggle('hidden', s.tpl !== "2"); document.getElementById('t2-colors').classList.toggle('hidden', s.tpl !== "2"); render(); }
+    function loadSet() {
+        const s = JSON.parse(localStorage.getItem('bp_conf'));
+        if(s) {
+            document.querySelector(`input[name="tpl"][value="${s.tpl||'1'}"]`).checked = true;
+            document.getElementById('t2-extras').classList.toggle('hidden', (s.tpl||'1') !== "2"); document.getElementById('t2-colors').classList.toggle('hidden', (s.tpl||'1') !== "2");
+            document.getElementById('checkCity').checked = s.isCity; document.getElementById('checkBarmm').checked = s.isBarmm;
+            document.getElementById('setProv').value=s.p; document.getElementById('setMun').value=s.m; document.getElementById('setBrgy').value=s.b; document.getElementById('setCap').value=s.cap;
+            document.getElementById('kag1').value=s.k1||""; document.getElementById('kag2').value=s.k2||""; document.getElementById('kag3').value=s.k3||""; document.getElementById('kag4').value=s.k4||""; document.getElementById('kag5').value=s.k5||""; document.getElementById('kag6').value=s.k6||""; document.getElementById('kag7').value=s.k7||"";
+            document.getElementById('setSk').value=s.sk||""; document.getElementById('setSec').value=s.sec||""; document.getElementById('setTreas').value=s.tr||"";
+            document.getElementById('setVis').value=s.vis||""; document.getElementById('setMis').value=s.mis||"";
+            document.getElementById('colBg').value=s.cBg||"#e8f5e9"; document.getElementById('colTxt').value=s.cTxt||"#1b5e20";
+        } render();
+    }
+    function saveImg(el, k) { if(el.files[0]) { const r = new FileReader(); r.onload = e => { localStorage.setItem('img_'+k, e.target.result); render(); }; r.readAsDataURL(el.files[0]); } }
+    function resetForm() { document.getElementById('inName').value=""; document.getElementById('inPrice').value=""; render(); }
+    window.onload = init;
+</script>
+</body>
+</html>
