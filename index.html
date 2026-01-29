@@ -247,7 +247,7 @@
         <input type="text" id="inReqName" class="hidden" placeholder="Name of Agency or Rep" oninput="render()">
         
         <div class="sec-lbl">Purpose</div>
-        <textarea id="inPurpose" rows="2" oninput="render()">FOR WHATEVER LEGAL PURPOSE IT MAY SERVE</textarea>
+        <textarea id="inPurpose" rows="2" oninput="render()">WHATEVER LEGAL PURPOSE IT MAY SERVE</textarea>
 
         <div class="sec-lbl">Receipt Footer</div>
         <div class="row">
@@ -415,7 +415,7 @@
                 <div class="f-eb bold justify" style="margin-bottom:20px; font-size:12pt;">TO WHOM IT MAY CONCERN:</div>
                 <div class="f-eb justify doc-text"><b>THIS IS TO CERTIFY</b> that <b>${d.name}</b>, ${d.age}, ${d.gender}, ${d.status}, Filipino Citizen, is a bona fide resident of ${d.addrType} ${d.purok}, Barangay ${s.b}, ${s.m}, ${s.p}.</div>
                 <div class="f-eb justify doc-text"><b>CERTIFYING FURTHER</b>, that the above-named person is known to the undersigned as a law-abiding citizen with good moral character and reputation in the community. Records of this office show that ${d.pron} has <b>NO DEROGATORY RECORD</b> or pending case filed against ${d.poss} as of this date.</div>
-                <div class="f-eb justify doc-text">This clearance is hereby issued upon the request of <b>${d.req}</b> in connection with ${d.poss} application for <b>${d.purpose}</b>.</div>
+                <div class="f-eb justify doc-text">This clearance is hereby issued upon the request of <b>${d.req}</b> for <b>${d.purpose}</b>.</div>
                 <div class="f-tnr center" style="margin-top:30px; font-size:12pt;">Given ${dateStr} at Barangay ${s.b}.</div>
             `;
         } else if (d.type === "CERTIFICATE OF INDIGENCY") {
