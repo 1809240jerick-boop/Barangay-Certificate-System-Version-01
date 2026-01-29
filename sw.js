@@ -1,4 +1,4 @@
-const CACHE_NAME = 'brgy-pro-v3'; // Increment this (v2, v3) whenever you push to GitHub
+const CACHE_NAME = 'brgy-pro-v4'; // Increment this (v2, v3) whenever you push to GitHub
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -53,4 +53,5 @@ self.addEventListener('fetch', (event) => {
     );
   }
 });
+
 
