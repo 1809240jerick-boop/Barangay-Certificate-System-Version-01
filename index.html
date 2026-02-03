@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Barangay Pro v9.4 - Address Selection Update</title>
+    <title>Barangay Pro v10.0 - Auto-Fit Text</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=EB+Garamond:wght@400;700&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -13,6 +13,7 @@
             --text-main: #1e293b;
             --text-muted: #64748b;
             --primary: #3b82f6; 
+            --danger: #ef4444;
             --t2-bg: #e8f5e9; 
             --t2-accent: #1b5e20;
             --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
@@ -70,6 +71,11 @@
         }
         input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); }
         
+        .file-group { display: flex; gap: 5px; align-items: center; margin-bottom: 10px; }
+        .file-group input { margin-bottom: 0; }
+        .btn-clear { background: #ffe4e6; color: var(--danger); border: 1px solid #fecdd3; border-radius: 6px; padding: 0 12px; height: 42px; cursor: pointer; font-weight: bold; }
+        .btn-clear:hover { background: #fecdd3; }
+
         .row { display: flex; gap: 12px; } .col { flex: 1; } .hidden { display: none !important; }
 
         .btn { 
@@ -109,20 +115,26 @@
         .doc-text { font-size: 12.5pt; line-height: 1.5; text-indent: 40px; margin-bottom: 15px; position: relative; z-index: 1; text-align: justify; }
 
         /* T1 */
-        .t1-body { padding: 25mm; flex-grow: 1; display: flex; flex-direction: column; }
+        .t1-body { padding: 25mm 25mm 0 25mm; flex-grow: 1; display: flex; flex-direction: column; position: relative; }
         .t1-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px; border-bottom: 2px solid black; padding-bottom: 10px; }
         .t1-logo { width: 90px; height: 90px; object-fit: contain; border-radius: 50%; }
 
         /* T2 */
         .t2-container { display: flex; height: 100%; }
-        .t2-sidebar { width: 260px; background: var(--t2-bg); border-right: 4px solid var(--t2-accent); padding: 20px 15px; display: flex; flex-direction: column; text-align: center; flex-shrink: 0; }
+        .t2-sidebar { width: 260px; background: var(--t2-bg); border-right: 4px solid var(--t2-accent); padding: 20px 15px; display: flex; flex-direction: column; text-align: center; flex-shrink: 0; z-index: 2; }
         .t2-content { flex-grow: 1; display: flex; flex-direction: column; position: relative; }
         .t2-banner { background: linear-gradient(135deg, #1565C0 0%, #1E88E5 100%); color: white; padding: 15px 20px; display: flex; align-items: center; gap: 15px; border-bottom: 5px solid #FFC107; }
         .pic-wrapper { padding: 20px 40px 0 40px; display: flex; justify-content: flex-end; }
         .pic-box { width: 120px; height: 120px; border: 1px solid #ccc; background: #f8f9fa; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: #999; object-fit: cover; }
         
         .off-role { font-size: 0.65rem; font-weight: 700; color: var(--t2-accent); text-transform: uppercase; }
-        .off-name { font-size: 0.85rem; font-weight: 700; color: #0f172a; margin-bottom: 8px; line-height: 1.1; }
+        
+        /* UPDATED: Off-Name now handles nowrap to trigger resizing logic */
+        .off-name { 
+            font-size: 0.85rem; font-weight: 700; color: #0f172a; margin-bottom: 8px; line-height: 1.1; 
+            white-space: nowrap; overflow: hidden; /* Critical for auto-fit */
+        }
+        
         .pb-container { margin-top: 30px; margin-bottom: 25px; }
         .vm-box { margin-top: auto; padding-top: 20px; border-top: 2px solid var(--t2-accent); }
         .vm-title { font-weight: bold; color: var(--t2-accent); font-size: 0.8rem; margin-bottom: 4px; }
@@ -131,8 +143,24 @@
         #t2-watermark { position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%); width: 70%; opacity: 0.08; pointer-events: none; z-index: 0; }
         img[src=""], img:not([src]) { display: none !important; }
 
+        /* Signature Block Updated for nowrap */
         .sig-block { margin-top: 50px; margin-bottom: 30px; text-align: center; margin-left: auto; width: 250px; }
-        .footer-receipt { margin-top: auto; font-family: 'Courier New', monospace; font-size: 9pt; border: 1px solid #000; padding: 5px; width: 220px; background: rgba(255,255,255,0.95); }
+        .sig-block .bold { white-space: nowrap; overflow: hidden; }
+
+        /* Special class for Business Name resizing */
+        .auto-fit-biz { white-space: nowrap; overflow: hidden; width: 100%; display: block; }
+        
+        /* Receipt Footer */
+        .footer-receipt { 
+            margin-right: auto; margin-left: 0; margin-top: auto; text-align: left;
+            font-family: 'Courier New', monospace; font-size: 9pt; 
+            border: 1px solid #000; padding: 5px; width: 220px; 
+            background: rgba(255,255,255,0.95);
+            position: relative; z-index: 5;
+        }
+
+        .footer-banner-box { position: absolute; bottom: 0; left: 0; width: 100%; line-height: 0; z-index: 1; }
+        .footer-banner-img { width: 100%; max-height: 140px; object-fit: fill; }
 
         /* MODALS */
         .modal-overlay {
@@ -188,7 +216,7 @@
 <div id="app-sidebar">
     <div class="brand">
         <span>Barangay Pro</span>
-        <span style="font-size:0.7rem; background:rgba(255,255,255,0.2); color:white; padding:2px 6px; border-radius:4px;">v9.4</span>
+        <span style="font-size:0.7rem; background:rgba(255,255,255,0.2); color:white; padding:2px 6px; border-radius:4px;">v10.0</span>
     </div>
     <div class="nav-pills">
         <button class="nav-btn active" onclick="setTab('issue')">Issuance</button>
@@ -231,7 +259,10 @@
         </div>
         
         <div class="sec-lbl">Resident Photo (Template 2)</div>
-        <input type="file" id="inPhoto" onchange="saveImg(this, 'Photo')">
+        <div class="file-group">
+            <input type="file" id="inPhoto" onchange="saveImg(this, 'Photo')">
+            <button class="btn-clear" onclick="clearImg('Photo')" title="Remove Photo">×</button>
+        </div>
 
         <div id="bizGroup" class="hidden" style="background:#f8fafc; border:1px solid #e2e8f0; padding:15px; border-radius:8px; margin-bottom:15px;">
             <div style="color:var(--primary); font-size:0.75rem; font-weight:800; margin-bottom:8px; text-transform:uppercase;">Business Details</div>
@@ -260,7 +291,7 @@
 
         <button class="btn btn-success" onclick="saveRecord()">Save Record</button>
         <button class="btn btn-primary" onclick="window.print()">🖨️ Print Document</button>
-        <button class="btn btn-ghost" onclick="resetForm()">↺ Reset</button>
+        <button class="btn btn-ghost" onclick="resetForm()">↺ Reset (Clear All)</button>
     </div>
 
     <div id="tab-records" class="tab-content">
@@ -319,12 +350,35 @@
         <input type="text" id="setSec" placeholder="Secretary" oninput="saveSet()">
         <input type="text" id="setTreas" placeholder="Treasurer" oninput="saveSet()">
 
-        <div class="sec-lbl">Official Logos</div>
+        <div class="sec-lbl">Official Images</div>
         <div class="row">
-            <div class="col"><span style="font-size:0.7rem">Left</span><input type="file" onchange="saveImg(this, 'L')"></div>
-            <div class="col"><span style="font-size:0.7rem">Right</span><input type="file" onchange="saveImg(this, 'R')"></div>
+            <div class="col">
+                <span style="font-size:0.7rem">Left Logo</span>
+                <div class="file-group">
+                    <input type="file" id="fileL" onchange="saveImg(this, 'L')">
+                    <button class="btn-clear" onclick="clearImg('L')">×</button>
+                </div>
+            </div>
+            <div class="col">
+                <span style="font-size:0.7rem">Right Logo</span>
+                <div class="file-group">
+                    <input type="file" id="fileR" onchange="saveImg(this, 'R')">
+                    <button class="btn-clear" onclick="clearImg('R')">×</button>
+                </div>
+            </div>
         </div>
-        <span style="font-size:0.7rem">Watermark</span><input type="file" onchange="saveImg(this, 'W')">
+        
+        <span style="font-size:0.7rem">Watermark (T2)</span>
+        <div class="file-group">
+            <input type="file" id="fileW" onchange="saveImg(this, 'W')">
+            <button class="btn-clear" onclick="clearImg('W')">×</button>
+        </div>
+
+        <span style="font-size:0.7rem">Footer Banner/Image (All)</span>
+        <div class="file-group">
+            <input type="file" id="fileF" onchange="saveImg(this, 'F')">
+            <button class="btn-clear" onclick="clearImg('F')">×</button>
+        </div>
 
         <div id="t2-extras" class="hidden">
             <div class="sec-lbl">Vision & Mission</div>
@@ -403,13 +457,16 @@
 
         const imgs = { 
             L: localStorage.getItem('img_L') || '', R: localStorage.getItem('img_R') || '', 
-            W: localStorage.getItem('img_W') || '', P: localStorage.getItem('img_Photo') || ''
+            W: localStorage.getItem('img_W') || '', P: localStorage.getItem('img_Photo') || '',
+            F: localStorage.getItem('img_F') || ''
         };
         const paper = document.getElementById('paper-container');
         const tpl = document.querySelector('input[name="tpl"]:checked').value;
         const today = new Date();
         const dateStr = `this ${getOrdinal(today.getDate())} day of ${months[today.getMonth()]}, ${today.getFullYear()}`;
         
+        const footerMargin = imgs.F ? '140px' : '0px';
+
         let bodyHTML = `<div class="doc-title">${d.type}</div>`;
         const fullAddr = d.addrType === "NONE" ? d.purok : `${d.addrType} ${d.purok}`;
 
@@ -440,10 +497,10 @@
         } else if (d.type === "BARANGAY BUSINESS CLEARANCE") {
             bodyHTML += `
                 <div class="f-eb justify doc-text">Pursuant to the provisions of the Local Government Code of 1991 (R.A. 7160), permission is hereby granted to:</div>
-                <div class="center bold" style="font-size:16pt; margin:15px 0; text-transform:uppercase;">${d.name}</div>
+                <div class="center bold auto-fit-biz" style="font-size:16pt; margin:15px 0; text-transform:uppercase;">${d.name}</div>
                 <div class="center" style="font-size:11pt;">(Owner / Proprietor)</div>
                 <div class="f-eb justify doc-text" style="margin-top:20px;">To operate the business establishment known as:</div>
-                <div class="center bold" style="font-size:18pt; margin:10px 0; text-transform:uppercase;">${d.bizName}</div>
+                <div class="center bold auto-fit-biz" style="font-size:18pt; margin:10px 0; text-transform:uppercase;">${d.bizName}</div>
                 <div class="center" style="font-size:11pt; margin-bottom:20px;">Nature: ${d.bizNature} | Location: ${d.bizLoc}</div>
                 <div class="f-eb justify doc-text">This clearance is granted subject to the condition that the said grantee shall comply with all existing ordinances, rules and regulations governing the operation of the business. Any violation of the provision of laws and ordinances shall be sufficient cause for the revocation of this clearance.</div>
                 <div class="f-eb justify doc-text">This clearance is valid until <b>December 31, ${today.getFullYear()}</b> unless sooner revoked for cause.</div>
@@ -452,7 +509,8 @@
         }
 
         const sigBlock = `<div class="sig-block f-tnr"><div class="bold" style="text-transform:uppercase; border-bottom:1px solid black; font-size:12pt;">HON. ${s.cap}</div><div style="font-size:11pt;">Punong Barangay</div></div>`;
-        const footerHTML = `<div class="footer-receipt"><div>O.R. No.: <b>${d.or}</b></div><div>Amount : <b>${d.amt ? '₱ '+parseFloat(d.amt).toFixed(2) : ''}</b></div><div>Date : ${today.toLocaleDateString()}</div><div style="font-size:8pt">Ctrl: ${d.ctrl}</div></div>`;
+        const footerHTML = `<div class="footer-receipt" style="margin-bottom: ${footerMargin}"><div>O.R. No.: <b>${d.or}</b></div><div>Amount : <b>${d.amt ? '₱ '+parseFloat(d.amt).toFixed(2) : ''}</b></div><div>Date : ${today.toLocaleDateString()}</div><div style="font-size:8pt">Ctrl: ${d.ctrl}</div></div>`;
+        const footerBanner = imgs.F ? `<div class="footer-banner-box"><img src="${imgs.F}" class="footer-banner-img"></div>` : '';
         
         const hBarmm = s.isBarmm ? 'AUTONOMOUS REGION IN MUSLIM MINDANAO' : '';
         const hProv = !s.isCity ? `Province of ${s.p}` : '';
@@ -473,8 +531,12 @@
                         </div>
                         <img src="${imgs.R}" class="t1-logo">
                     </div>
-                    <div style="flex-grow:1; display:flex; flex-direction:column;">${bodyHTML} ${sigBlock}</div>
-                    ${footerHTML}
+                    <div style="flex-grow:1; display:flex; flex-direction:column;">
+                        ${bodyHTML} 
+                        ${sigBlock} 
+                        ${footerHTML}
+                    </div>
+                    ${footerBanner}
                 </div>`;
         } else {
             const kags = [s.k1, s.k2, s.k3, s.k4, s.k5, s.k6, s.k7].filter(k=>k).map(k=>`<div class="off-name">HON. ${k.toUpperCase()}</div>`).join('');
@@ -502,12 +564,29 @@
                             </div>
                         </div>
                         <div class="pic-wrapper"><img class="pic-box" src="${imgs.P}"></div>
-                        <div style="padding:0 40px 20px 40px; flex-grow:1; display:flex; flex-direction:column;">
-                            ${bodyHTML} ${sigBlock} <div style="margin-top:auto">${footerHTML}</div>
+                        <div style="padding:0 40px 0 40px; flex-grow:1; display:flex; flex-direction:column;">
+                            ${bodyHTML} 
+                            ${sigBlock} 
+                            ${footerHTML}
                         </div>
+                        ${footerBanner}
                     </div>
                 </div>`;
         }
+        
+        autoFitText();
+    }
+    
+    function autoFitText() {
+        const elements = document.querySelectorAll('.off-name, .sig-block .bold, .auto-fit-biz');
+        elements.forEach(el => {
+            let size = parseFloat(window.getComputedStyle(el).fontSize);
+            // Reset logic if needed, but since render rebuilds, we just shrink.
+            while (el.scrollWidth > el.clientWidth && size > 6) {
+                size -= 0.5;
+                el.style.fontSize = size + 'px';
+            }
+        });
     }
 
     function getData() {
@@ -601,8 +680,24 @@
             document.getElementById('colBg').value=s.cBg||"#e8f5e9"; document.getElementById('colTxt').value=s.cTxt||"#1b5e20";
         } render();
     }
+    
     function saveImg(el, k) { if(el.files[0]) { const r = new FileReader(); r.onload = e => { localStorage.setItem('img_'+k, e.target.result); render(); }; r.readAsDataURL(el.files[0]); } }
-    function resetForm() { document.getElementById('inName').value=""; document.getElementById('inPrice').value=""; render(); }
+    
+    function clearImg(k) {
+        localStorage.removeItem('img_' + k);
+        // Visual reset of file inputs
+        if(document.getElementById('file' + k)) document.getElementById('file' + k).value = "";
+        if(k === 'Photo') document.getElementById('inPhoto').value = "";
+        render();
+    }
+    
+    function resetForm() { 
+        document.getElementById('inName').value=""; 
+        document.getElementById('inPrice').value="";
+        // Clear photo via function
+        clearImg('Photo');
+        render(); 
+    }
     window.onload = init;
 </script>
 </body>
